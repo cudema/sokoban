@@ -1,9 +1,11 @@
+//이학윤
 #include <ncurses.h>
 #include <locale.h>
 
-
-#define GYO 10	
+#define GYO 10
 #define RETU 10
+
+//뒤로가기 추가
 
 int meiro[GYO][RETU] = {
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -22,15 +24,48 @@ int px, py;
 int goal_count;	
 int count;		
 
-void play_start(void)
+int moveInfo[100];
+int top = -1;
+
+int getBack()
+{
+  return moveInfo[top--];
+}
+
+void play_reset(void)
 {
 	int x, y;
 	count = 0;
+  top = -1;
 	px = 1;
 	py = 1;
 	for(y=0; y<GYO; y++)
 		for(x=0; x<RETU; x++)
 			if(meiro[y][x] == 2) meiro[y][x] = 0;	
+}
+
+void play_restore()
+{
+  if (top > -1)
+  {
+    meiro[py][px] = 0;
+    switch(getBack())
+    {
+    case 0:
+      py++;
+      break;
+    case 1:
+      px--;
+      break;
+    case 2:
+      py--;
+      break;
+    case 3:
+      px++;
+      break;
+    }
+    count--;
+  }
 }
 
 void goal_count_check(void)
@@ -60,7 +95,7 @@ void draw_meiro(void)
 				mvprintw(y,x*2,"🔳");
 		}
 	}
-  mvprintw(GYO,0,"move: ← ↑ → ↓ restart: ESC");  // 🟩 🟩 🟩 🟫🟫🟫 ❤️❤️❤️ 🍎🍎🍎🍎 
+  mvprintw(GYO,0,"move: ← ↑ → ↓ restart: SPACE restore: R");  // 🟩 🟩 🟩 🟫🟫🟫 ❤️❤️❤️ 🍎🍎🍎🍎 
 	// printf("move: ←↑→↓ restart: SPACE\n");	
 }
 
@@ -70,15 +105,33 @@ void key_input(void)
 	key = getch();
 	
   if(key == KEY_UP && meiro[py-1][px] == 0)		
-		py --;	
+  {
+    py--;
+    top++;
+    moveInfo[top] = 0;
+  }
 	else if(key == KEY_DOWN && meiro[py+1][px] == 0)
-		py ++;
-	else if(key == KEY_LEFT && meiro[py][px-1] == 0)	
-		px --;
-	else if(key == KEY_RIGHT && meiro[py][px+1] == 0)	
-		px ++;	
+  {
+    py++;
+    top++;
+    moveInfo[top] = 2;
+  }
+	else if(key == KEY_LEFT && meiro[py][px-1] == 0)
+  {
+		px--;
+    top++;
+    moveInfo[top] = 3;
+  }
+	else if(key == KEY_RIGHT && meiro[py][px+1] == 0)
+  {
+		px++;
+    top++;
+    moveInfo[top] = 1;
+  }
 	else if(key == ' ')		
-		play_start();	
+		play_reset();	
+  else if(key == 'r')
+    play_restore();
 	else										
 		key_input();						
 }
@@ -116,6 +169,6 @@ int main(void)
     refresh();
 	}
 
-endwin();
+	endwin();
 	return 0;
 }
